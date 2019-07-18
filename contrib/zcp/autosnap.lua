@@ -1,6 +1,6 @@
 -- Recursively snapshot every dataset with a given property
 --
--- Usage: zfs program <pool> autosnap.lua [noop] [<property>] <snapshot>
+-- Usage: zfs program <pool> autosnap.lua -- [-n] [-p <property>] <snapshot>
 
 results = {}
 
@@ -9,34 +9,31 @@ argv = args["argv"]
 usage = [[
 
 
-usage: zfs program <pool> autosnap.lua [noop] [<property>] <snapshot>
+usage: zfs program <pool> autosnap.lua -- [-n] [-p <property>] <snapshot>
 
-	noop: performs checks only, does not take snapshots
-	property: property to check. [default=com.sun:auto-snapshot]
-	snapshot: root snapshot to create example: tank@backup
+	-n: performs checks only, does not take snapshots
+	-p <property>: property to check. [default: com.sun:auto-snapshot]
+	<snapshot>: root snapshot to create [example: tank/data@backup]
 ]]
 
-if #argv == 0 then
-	error(usage)
-end
-
-noop = false
--- 'noop' is a workaround for issue #9056
-if argv[1] == "noop" or argv[1] == "-n" then
-	noop = true
-	table.remove(argv, 1)
-end
-
-if #argv == 0 then
-	error(usage)
-end
-
 property = "com.sun:auto-snapshot"
-if #argv > 1 then
-	property = table.remove(argv, 1)
+noop = false
+root_snap = nil
+
+for i, arg in ipairs(argv) do
+	if arg == "-n" then
+		noop = true
+	elseif arg == "-p" then
+	elseif argv[i-1] == "-p" then
+		property = arg
+	else
+		root_snap = arg
+	end
 end
 
-root_snap = argv[1]
+if root_snap == nil or property == nil then
+	error(usage)
+end
 
 root_ds_name = ""
 snap_name = ""
